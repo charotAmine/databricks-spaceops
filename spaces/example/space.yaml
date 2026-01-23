@@ -1,0 +1,41 @@
+# Example Genie Space Definition
+# ==============================
+# Copy this file and customize for your use case.
+# See samples/configs/full_featured_space.yaml for all options.
+
+title: "My Analytics Space"
+description: "AI-powered analytics assistant"
+warehouse_id: null  # Set via --warehouse-id or environment config
+version: 2
+
+data_sources:
+  tables:
+    - identifier: "catalog.schema.my_table"
+      column_configs:
+        - column_name: "id"
+          enable_format_assistance: true
+        - column_name: "name"
+          enable_format_assistance: true
+          enable_entity_matching: true
+        - column_name: "created_at"
+          enable_format_assistance: true
+
+# Natural language instructions for Genie
+instructions:
+  - content: "When users ask about X, use the Y column."
+    category: "guidance"
+
+# Example queries for Genie to learn from
+example_queries:
+  - question: "Show me all records"
+    sql: |
+      SELECT * FROM catalog.schema.my_table LIMIT 100
+
+# Table joins
+joins: []
+
+# SQL snippets
+filters: []
+expressions: []
+measures: []
+

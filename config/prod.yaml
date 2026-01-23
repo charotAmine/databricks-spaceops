@@ -1,0 +1,9 @@
+# Production Environment Configuration
+name: prod
+host: "${DATABRICKS_PROD_HOST}"  # Set via environment variable
+warehouse_id: "${PROD_WAREHOUSE_ID}"  # Set via environment variable
+space_id: null  # Set after first deployment
+
+# Production uses system tables directly
+table_mappings: {}
+

@@ -1,0 +1,9 @@
+# Staging Environment Configuration
+name: stage
+host: "${DATABRICKS_STAGE_HOST}"  # Set via environment variable
+warehouse_id: "${STAGE_WAREHOUSE_ID}"  # Set via environment variable
+space_id: null  # Set after first deployment
+
+# Table mappings (typically same as prod for staging)
+table_mappings: {}
+

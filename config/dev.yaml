@@ -1,0 +1,12 @@
+# Development Environment Configuration
+name: dev
+host: "${DATABRICKS_HOST}"  # Set via environment variable
+warehouse_id: "${WAREHOUSE_ID}"  # Set via environment variable
+space_id: null  # Set after first deployment or via environment variable
+
+# Optional: Map tables to dev-specific versions
+table_mappings: {}
+  # Uncomment to use dev-specific tables:
+  # "system.billing.usage": "dev_catalog.billing.usage"
+  # "system.billing.list_prices": "dev_catalog.billing.list_prices"
+

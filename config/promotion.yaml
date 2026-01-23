@@ -1,0 +1,35 @@
+# Multi-Environment Promotion Configuration
+# Defines the environment pipeline and promotion settings
+#
+# Set these environment variables:
+#   DATABRICKS_DEV_HOST, DEV_WAREHOUSE_ID
+#   DATABRICKS_STAGE_HOST, STAGE_WAREHOUSE_ID
+#   DATABRICKS_PROD_HOST, PROD_WAREHOUSE_ID
+
+promotion_order:
+  - dev
+  - stage
+  - prod
+
+environments:
+  dev:
+    name: dev
+    host: "${DATABRICKS_DEV_HOST}"
+    warehouse_id: "${DEV_WAREHOUSE_ID}"
+    space_id: null  # Set after first deployment
+    table_mappings: {}
+
+  stage:
+    name: stage
+    host: "${DATABRICKS_STAGE_HOST}"
+    warehouse_id: "${STAGE_WAREHOUSE_ID}"
+    space_id: null  # Set after first deployment
+    table_mappings: {}
+
+  prod:
+    name: prod
+    host: "${DATABRICKS_PROD_HOST}"
+    warehouse_id: "${PROD_WAREHOUSE_ID}"
+    space_id: null  # Set after first deployment
+    table_mappings: {}
+

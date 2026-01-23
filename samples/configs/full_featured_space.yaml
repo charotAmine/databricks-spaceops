@@ -1,0 +1,203 @@
+# =============================================================================
+# SpaceOps Full-Featured Space Definition
+# =============================================================================
+# This configuration demonstrates ALL capabilities supported by Genie API:
+# - Data Sources (tables with column configs)
+# - Instructions (text guidance for Genie)
+# - Joins (table relationships with SQL conditions)
+# - Example Queries (question + SQL pairs)
+# - SQL Snippets (filters, expressions, measures)
+# =============================================================================
+
+title: "Databricks Billing Intelligence"
+description: "AI-powered analytics for Databricks billing, usage, and cost optimization"
+warehouse_id: null  # Set via --warehouse-id or environment config
+version: 2
+
+# Metadata tags (for local organization)
+tags:
+  team: "platform-engineering"
+  domain: "finops"
+
+# =============================================================================
+# DATA SOURCES
+# =============================================================================
+data_sources:
+  tables:
+    - identifier: "system.billing.list_prices"
+      column_configs:
+        - column_name: "account_id"
+          enable_format_assistance: true
+        - column_name: "cloud"
+          enable_format_assistance: true
+          enable_entity_matching: true
+        - column_name: "currency_code"
+          enable_format_assistance: true
+          enable_entity_matching: true
+        - column_name: "price_end_time"
+          enable_format_assistance: true
+        - column_name: "price_start_time"
+          enable_format_assistance: true
+        - column_name: "pricing"
+        - column_name: "sku_name"
+          enable_format_assistance: true
+          enable_entity_matching: true
+        - column_name: "usage_unit"
+          enable_format_assistance: true
+          enable_entity_matching: true
+
+    - identifier: "system.billing.usage"
+      column_configs:
+        - column_name: "account_id"
+          enable_format_assistance: true
+        - column_name: "billing_origin_product"
+          enable_format_assistance: true
+          enable_entity_matching: true
+        - column_name: "cloud"
+          enable_format_assistance: true
+          enable_entity_matching: true
+        - column_name: "custom_tags"
+        - column_name: "identity_metadata"
+        - column_name: "ingestion_date"
+          enable_format_assistance: true
+        - column_name: "product_features"
+        - column_name: "record_id"
+          enable_format_assistance: true
+        - column_name: "record_type"
+          enable_format_assistance: true
+          enable_entity_matching: true
+        - column_name: "sku_name"
+          enable_format_assistance: true
+          enable_entity_matching: true
+        - column_name: "usage_date"
+          enable_format_assistance: true
+        - column_name: "usage_end_time"
+          enable_format_assistance: true
+        - column_name: "usage_metadata"
+        - column_name: "usage_quantity"
+          enable_format_assistance: true
+        - column_name: "usage_start_time"
+          enable_format_assistance: true
+        - column_name: "usage_type"
+          enable_format_assistance: true
+          enable_entity_matching: true
+        - column_name: "usage_unit"
+          enable_format_assistance: true
+          enable_entity_matching: true
+        - column_name: "workspace_id"
+          enable_format_assistance: true
+
+# =============================================================================
+# TEXT INSTRUCTIONS
+# =============================================================================
+# Natural language guidance for Genie
+instructions:
+  - content: "DBU stands for Databricks Unit - the unit of processing capability used for billing."
+    category: "terminology"
+  
+  - content: "When calculating costs, multiply usage_quantity by the pricing rate from list_prices after joining on sku_name."
+    category: "calculation"
+  
+  - content: "For time-based analysis, always filter on usage_date for optimal performance."
+    category: "best_practice"
+  
+  - content: "Group by billing_origin_product to show costs by product type (Jobs, SQL, Serverless)."
+    category: "aggregation"
+  
+  - content: "Group by workspace_id for chargeback reports showing costs per workspace."
+    category: "aggregation"
+
+# =============================================================================
+# TABLE JOINS
+# =============================================================================
+# Define relationships between tables
+joins:
+  - left_table: "system.billing.list_prices"
+    left_alias: "list_prices"
+    right_table: "system.billing.usage"
+    right_alias: "usage"
+    condition: "`list_prices`.`sku_name` = `usage`.`sku_name`"
+    relationship_type: "MANY_TO_ONE"
+    description: "Join usage with pricing to calculate costs"
+
+# =============================================================================
+# EXAMPLE QUERIES
+# =============================================================================
+# Question + SQL pairs for Genie to learn from
+example_queries:
+  - question: "What was our total DBU usage last month?"
+    sql: |
+      SELECT
+        SUM(usage_quantity) as total_dbus
+      FROM
+        system.billing.usage
+      WHERE
+        usage_date >= DATE_TRUNC('month', CURRENT_DATE - INTERVAL 1 MONTH)
+        AND usage_date < DATE_TRUNC('month', CURRENT_DATE)
+    description: "Monthly aggregation with date filter"
+
+  - question: "Show top 5 SKUs by usage"
+    sql: |
+      SELECT
+        sku_name,
+        SUM(usage_quantity) as total_usage
+      FROM
+        system.billing.usage
+      GROUP BY
+        sku_name
+      ORDER BY
+        total_usage DESC
+      LIMIT 5
+    description: "Ranking query"
+
+  - question: "What is usage by product type?"
+    sql: |
+      SELECT
+        billing_origin_product,
+        SUM(usage_quantity) as total_dbus
+      FROM
+        system.billing.usage
+      GROUP BY
+        billing_origin_product
+      ORDER BY
+        total_dbus DESC
+    description: "Product breakdown"
+
+# =============================================================================
+# SQL SNIPPETS
+# =============================================================================
+
+# Reusable filters
+filters:
+  - name: "Last 30 Days"
+    sql: "usage_date >= CURRENT_DATE - INTERVAL 30 DAY"
+  
+  - name: "Current Month"
+    sql: "usage_date >= DATE_TRUNC('month', CURRENT_DATE)"
+  
+  - name: "AWS Only"
+    sql: "cloud = 'AWS'"
+
+# Reusable expressions
+expressions:
+  - name: "Cost Estimate"
+    sql: "usage_quantity * pricing.default"
+    description: "Calculate estimated cost from usage and pricing"
+    synonyms:
+      - "estimated cost"
+      - "spend"
+
+  - name: "Daily Average"
+    sql: "AVG(usage_quantity)"
+    description: "Average daily usage"
+
+# Reusable measures
+measures:
+  - name: "Total DBUs"
+    sql: "SUM(usage_quantity)"
+  
+  - name: "Workspace Count"
+    sql: "COUNT(DISTINCT workspace_id)"
+  
+  - name: "Record Count"
+    sql: "COUNT(*)"

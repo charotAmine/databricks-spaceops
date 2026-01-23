@@ -1,0 +1,55 @@
+#!/bin/bash
+# SpaceOps Installation and Quick Start
+# =====================================
+
+set -e
+
+echo "🚀 Installing SpaceOps..."
+
+# Install
+pip install -e . || pip3 install -e .
+
+echo ""
+echo "✅ SpaceOps installed successfully!"
+echo ""
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "📋 Setup Instructions"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo ""
+echo "1. Set your Databricks credentials:"
+echo ""
+echo "   export DATABRICKS_HOST='https://your-workspace.cloud.databricks.com'"
+echo "   export DATABRICKS_TOKEN='your-personal-access-token'"
+echo ""
+echo "2. Verify connection:"
+echo ""
+echo "   spaceops list"
+echo ""
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "🔧 Quick Commands"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo ""
+echo "# List all spaces"
+echo "spaceops list"
+echo ""
+echo "# Snapshot existing space"
+echo "spaceops snapshot <space_id> -o spaces/my-space/space.yaml"
+echo ""
+echo "# Validate a space definition"
+echo "spaceops validate spaces/billing/space.yaml"
+echo ""
+echo "# Compare local vs remote"
+echo "spaceops diff spaces/billing/space.yaml <space_id>"
+echo ""
+echo "# Push changes (dry-run first)"
+echo "spaceops push spaces/billing/space.yaml --dry-run"
+echo ""
+echo "# Push changes"
+echo "spaceops push spaces/billing/space.yaml"
+echo ""
+echo "# Create new space from YAML"
+echo "spaceops push samples/configs/full_featured_space.yaml --warehouse-id <warehouse_id>"
+echo ""
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "📚 Documentation: https://github.com/charotAmine/databricks-spaceops"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
