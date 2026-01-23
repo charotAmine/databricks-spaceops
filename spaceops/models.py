@@ -2,11 +2,9 @@
 
 from __future__ import annotations
 
-import uuid
 from typing import Any
 
 from pydantic import BaseModel, Field
-
 
 # =============================================================================
 # COLUMN & TABLE CONFIGS
@@ -21,7 +19,7 @@ class ColumnConfig(BaseModel):
     # Local documentation only (not sent to API)
     description: str | None = Field(default=None, exclude=True)
     sample_values: list[str] | None = Field(default=None, exclude=True)
-    
+
     model_config = {"extra": "allow"}
 
 
@@ -32,7 +30,7 @@ class TableConfig(BaseModel):
     column_configs: list[ColumnConfig] = Field(default_factory=list)
     # Local documentation only
     description: str | None = Field(default=None, exclude=True)
-    
+
     model_config = {"extra": "allow"}
 
 
@@ -122,7 +120,7 @@ class SerializedSpace(BaseModel):
     version: int = 2
     data_sources: DataSources = Field(default_factory=DataSources)
     instructions: Instructions | None = None
-    
+
     model_config = {"extra": "allow"}
 
 
@@ -176,7 +174,7 @@ class SimpleMeasure(BaseModel):
 
 class SpaceDefinition(BaseModel):
     """Complete Genie space definition for version control.
-    
+
     This is the user-friendly format stored in YAML files.
     It gets converted to the API format when pushing to Databricks.
     """
@@ -184,41 +182,41 @@ class SpaceDefinition(BaseModel):
     title: str
     description: str | None = None
     warehouse_id: str | None = Field(None, description="Warehouse ID (can be overridden per environment)")
-    
+
     # Schema version
     version: int | str | None = Field(None, description="Schema version (int) or user-defined version (string)")
-    
+
     # Data sources
     data_sources: DataSources = Field(default_factory=DataSources)
-    
+
     # Instructions (user-friendly format)
     instructions: list[SimpleInstruction] = Field(default_factory=list)
     joins: list[SimpleJoin] = Field(default_factory=list)
     example_queries: list[SimpleExample] = Field(default_factory=list)
-    
+
     # SQL Snippets
     filters: list[SimpleFilter] = Field(default_factory=list)
     expressions: list[SimpleExpression] = Field(default_factory=list)
     measures: list[SimpleMeasure] = Field(default_factory=list)
-    
+
     # Functions (not yet supported by API)
     functions: list[dict] = Field(default_factory=list)
-    
+
     # Metadata
     tags: dict[str, str] = Field(default_factory=dict)
 
     def to_serialized_space(self) -> SerializedSpace:
         """Convert to the API serialized format."""
-        
+
         # Counter for generating unique IDs across all instruction types
         id_counter = [0]  # Use list for mutability in nested functions
-        
+
         def gen_id() -> str:
             """Generate a unique sortable 32-char hex ID."""
             id_counter[0] += 1
             # Format: prefix (8 chars) + counter (8 chars) + padding (16 chars) = 32 chars
             return f"01f0f000{id_counter[0]:08x}{'0' * 16}"
-        
+
         # Sort tables by identifier AND column_configs by column_name (API requirements)
         sorted_tables = sorted(
             [
@@ -241,10 +239,10 @@ class SpaceDefinition(BaseModel):
             key=lambda t: t.identifier
         )
         sorted_data_sources = DataSources(tables=sorted_tables)
-        
+
         # Build instructions in API format
         api_instructions = Instructions()
-        
+
         # Convert text instructions - API only supports ONE item with multiple content lines
         if self.instructions:
             api_instructions.text_instructions = [
@@ -253,7 +251,7 @@ class SpaceDefinition(BaseModel):
                     content=[inst.content for inst in self.instructions]
                 )
             ]
-        
+
         # Convert example queries
         if self.example_queries:
             api_instructions.example_question_sqls = [
@@ -264,7 +262,7 @@ class SpaceDefinition(BaseModel):
                 )
                 for ex in self.example_queries
             ]
-        
+
         # Convert joins
         if self.joins:
             api_instructions.join_specs = [
@@ -286,7 +284,7 @@ class SpaceDefinition(BaseModel):
                 )
                 for join in self.joins
             ]
-        
+
         # Convert SQL snippets
         if self.filters or self.expressions or self.measures:
             api_instructions.sql_snippets = SQLSnippets(
@@ -309,7 +307,7 @@ class SpaceDefinition(BaseModel):
                     for m in self.measures
                 ] if self.measures else None,
             )
-        
+
         # Only include instructions if there's content
         has_instructions = (
             api_instructions.text_instructions or
@@ -317,7 +315,7 @@ class SpaceDefinition(BaseModel):
             api_instructions.join_specs or
             api_instructions.sql_snippets
         )
-        
+
         return SerializedSpace(
             version=2,
             data_sources=sorted_data_sources,
@@ -382,7 +380,7 @@ class BenchmarkSuiteResult(BaseModel):
     failed: int
     accuracy: float
     results: list[BenchmarkResult]
-    
+
     @property
     def meets_threshold(self) -> bool:
         """Check if accuracy meets the minimum threshold."""
@@ -400,7 +398,7 @@ class EnvironmentConfig(BaseModel):
     host: str = Field(..., description="Databricks workspace host URL")
     warehouse_id: str
     space_id: str | None = Field(None, description="Existing space ID to update, or None to create new")
-    
+
     table_mappings: dict[str, str] = Field(
         default_factory=dict,
         description="Map source table names to environment-specific tables"

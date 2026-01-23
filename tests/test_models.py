@@ -16,8 +16,9 @@ class TestColumnConfig:
     def test_default_values(self):
         col = ColumnConfig(column_name="test_col")
         assert col.column_name == "test_col"
-        assert col.enable_format_assistance is False
-        assert col.enable_entity_matching is False
+        # API sends None by default (optional booleans)
+        assert col.enable_format_assistance is None
+        assert col.enable_entity_matching is None
 
     def test_with_all_options(self):
         col = ColumnConfig(
