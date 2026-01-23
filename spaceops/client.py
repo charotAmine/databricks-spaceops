@@ -43,9 +43,13 @@ class GenieClient:
         self.token = token or os.environ.get("DATABRICKS_TOKEN", "")
 
         if not self.host:
-            raise ValueError("Databricks host is required. Set DATABRICKS_HOST or pass host parameter.")
+            raise ValueError(
+                "Databricks host is required. Set DATABRICKS_HOST or pass host parameter."
+            )
         if not self.token:
-            raise ValueError("Databricks token is required. Set DATABRICKS_TOKEN or pass token parameter.")
+            raise ValueError(
+                "Databricks token is required. Set DATABRICKS_TOKEN or pass token parameter."
+            )
 
         self._client = httpx.Client(
             base_url=f"{self.host}/api/2.0",
@@ -184,7 +188,9 @@ class GenieClient:
         response = self._client.delete(f"/genie/spaces/{space_id}")
         self._handle_response(response)
 
-    def list_spaces(self, page_token: str | None = None, page_size: int = 100) -> tuple[list[GenieSpace], str | None]:
+    def list_spaces(
+        self, page_token: str | None = None, page_size: int = 100
+    ) -> tuple[list[GenieSpace], str | None]:
         """List all Genie spaces in the workspace.
 
         Args:
@@ -331,4 +337,3 @@ class GenieClient:
 
     def __exit__(self, *args) -> None:
         self.close()
-

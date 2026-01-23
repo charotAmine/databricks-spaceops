@@ -70,7 +70,9 @@ def main():
 @main.command()
 @click.argument("space_id")
 @click.option("-o", "--output", type=click.Path(), help="Output file path")
-@click.option("--format", "fmt", type=click.Choice(["yaml", "json"]), default="yaml", help="Output format")
+@click.option(
+    "--format", "fmt", type=click.Choice(["yaml", "json"]), default="yaml", help="Output format"
+)
 @click.option("--host", envvar="DATABRICKS_HOST", help="Databricks workspace host")
 @click.option("--token", envvar="DATABRICKS_TOKEN", help="Databricks access token")
 def snapshot(space_id: str, output: str | None, fmt: str, host: str | None, token: str | None):
@@ -104,7 +106,9 @@ def snapshot(space_id: str, output: str | None, fmt: str, host: str | None, toke
             definition = {k: v for k, v in definition.items() if v is not None}
 
             if fmt == "yaml":
-                content = yaml.dump(definition, default_flow_style=False, sort_keys=False, allow_unicode=True)
+                content = yaml.dump(
+                    definition, default_flow_style=False, sort_keys=False, allow_unicode=True
+                )
             else:
                 content = json.dumps(definition, indent=2)
 
@@ -119,14 +123,16 @@ def snapshot(space_id: str, output: str | None, fmt: str, host: str | None, toke
 
             # Print summary
             tables = serialized.get("data_sources", {}).get("tables", [])
-            console.print(Panel(
-                f"[bold]Space:[/bold] {space.title}\n"
-                f"[bold]ID:[/bold] {space.space_id}\n"
-                f"[bold]Warehouse:[/bold] {space.warehouse_id}\n"
-                f"[bold]Tables:[/bold] {len(tables)}",
-                title="📸 Snapshot Summary",
-                border_style="green",
-            ))
+            console.print(
+                Panel(
+                    f"[bold]Space:[/bold] {space.title}\n"
+                    f"[bold]ID:[/bold] {space.space_id}\n"
+                    f"[bold]Warehouse:[/bold] {space.warehouse_id}\n"
+                    f"[bold]Tables:[/bold] {len(tables)}",
+                    title="📸 Snapshot Summary",
+                    border_style="green",
+                )
+            )
 
     except GenieAPIError as e:
         console.print(f"[red]Error:[/red] {e}")
@@ -177,15 +183,17 @@ def push(
 
         action = "update" if space_id else "create"
 
-        console.print(Panel(
-            f"[bold]Action:[/bold] {action.upper()}\n"
-            f"[bold]Title:[/bold] {definition.title}\n"
-            f"[bold]Space ID:[/bold] {space_id or '(new)'}\n"
-            f"[bold]Warehouse:[/bold] {warehouse_id or definition.warehouse_id}\n"
-            f"[bold]Tables:[/bold] {len(definition.data_sources.tables)}",
-            title=f"{'🔍 Dry Run' if dry_run else '🚀 Push'} Preview",
-            border_style="yellow" if dry_run else "blue",
-        ))
+        console.print(
+            Panel(
+                f"[bold]Action:[/bold] {action.upper()}\n"
+                f"[bold]Title:[/bold] {definition.title}\n"
+                f"[bold]Space ID:[/bold] {space_id or '(new)'}\n"
+                f"[bold]Warehouse:[/bold] {warehouse_id or definition.warehouse_id}\n"
+                f"[bold]Tables:[/bold] {len(definition.data_sources.tables)}",
+                title=f"{'🔍 Dry Run' if dry_run else '🚀 Push'} Preview",
+                border_style="yellow" if dry_run else "blue",
+            )
+        )
 
         if dry_run:
             console.print("[yellow]Dry run - no changes made[/yellow]")
@@ -279,7 +287,9 @@ def validate(definition_path: str):
         for table in definition.data_sources.tables:
             parts = table.identifier.split(".")
             if len(parts) != 3:
-                warnings.append(f"Table identifier '{table.identifier}' should be fully qualified (catalog.schema.table)")
+                warnings.append(
+                    f"Table identifier '{table.identifier}' should be fully qualified (catalog.schema.table)"
+                )
 
         # Print results
         if errors:
@@ -296,16 +306,18 @@ def validate(definition_path: str):
                     console.print(f"  [yellow]WARNING:[/yellow] {warn}")
 
             # Print summary
-            console.print(Panel(
-                f"[bold]Title:[/bold] {definition.title}\n"
-                f"[bold]Tables:[/bold] {len(definition.data_sources.tables)}\n"
-                f"[bold]Joins:[/bold] {len(definition.joins)}\n"
-                f"[bold]Instructions:[/bold] {len(definition.instructions)}\n"
-                f"[bold]Examples:[/bold] {len(definition.example_queries)}\n"
-                f"[bold]Functions:[/bold] {len(definition.functions)}",
-                title="✓ Valid Space Definition",
-                border_style="green",
-            ))
+            console.print(
+                Panel(
+                    f"[bold]Title:[/bold] {definition.title}\n"
+                    f"[bold]Tables:[/bold] {len(definition.data_sources.tables)}\n"
+                    f"[bold]Joins:[/bold] {len(definition.joins)}\n"
+                    f"[bold]Instructions:[/bold] {len(definition.instructions)}\n"
+                    f"[bold]Examples:[/bold] {len(definition.example_queries)}\n"
+                    f"[bold]Functions:[/bold] {len(definition.functions)}",
+                    title="✓ Valid Space Definition",
+                    border_style="green",
+                )
+            )
 
     except Exception as e:
         console.print(f"[red]✗ Validation failed:[/red] {e}")
@@ -366,7 +378,9 @@ def benchmark(
             console.print(f"\n[red]✗ Benchmark failed - accuracy below {min_accuracy:.0%}[/red]")
             sys.exit(1)
         else:
-            console.print(f"\n[green]✓ All benchmarks passed (>= {min_accuracy:.0%} accuracy)[/green]")
+            console.print(
+                f"\n[green]✓ All benchmarks passed (>= {min_accuracy:.0%} accuracy)[/green]"
+            )
 
     except GenieAPIError as e:
         console.print(f"[red]Error:[/red] {e}")
@@ -377,7 +391,12 @@ def benchmark(
 @click.argument("definition_path", type=click.Path(exists=True))
 @click.argument("target_env")
 @click.option("--config", type=click.Path(exists=True), required=True, help="Promotion config file")
-@click.option("--benchmark", "benchmark_path", type=click.Path(exists=True), help="Benchmark file to run before promotion")
+@click.option(
+    "--benchmark",
+    "benchmark_path",
+    type=click.Path(exists=True),
+    help="Benchmark file to run before promotion",
+)
 @click.option("--min-accuracy", type=float, default=0.8, help="Minimum accuracy for benchmark")
 @click.option("--skip-benchmark", is_flag=True, help="Skip benchmark validation")
 @click.option("--dry-run", is_flag=True, help="Show what would be done")
@@ -405,20 +424,24 @@ def promote(
 
         if target_env not in promotion_config.environments:
             available = ", ".join(promotion_config.environments.keys())
-            console.print(f"[red]Error:[/red] Unknown environment '{target_env}'. Available: {available}")
+            console.print(
+                f"[red]Error:[/red] Unknown environment '{target_env}'. Available: {available}"
+            )
             sys.exit(1)
 
         env_config = promotion_config.environments[target_env]
         definition = load_space_definition(Path(definition_path))
 
-        console.print(Panel(
-            f"[bold]Target:[/bold] {target_env}\n"
-            f"[bold]Host:[/bold] {env_config.host}\n"
-            f"[bold]Space:[/bold] {env_config.space_id or '(new)'}\n"
-            f"[bold]Warehouse:[/bold] {env_config.warehouse_id}",
-            title="🚀 Promotion Plan",
-            border_style="blue",
-        ))
+        console.print(
+            Panel(
+                f"[bold]Target:[/bold] {target_env}\n"
+                f"[bold]Host:[/bold] {env_config.host}\n"
+                f"[bold]Space:[/bold] {env_config.space_id or '(new)'}\n"
+                f"[bold]Warehouse:[/bold] {env_config.warehouse_id}",
+                title="🚀 Promotion Plan",
+                border_style="blue",
+            )
+        )
 
         # Run benchmark if configured
         if benchmark_path and not skip_benchmark:
@@ -436,11 +459,15 @@ def promote(
                     with GenieClient(host=source_config.host) as client:
                         suite = load_benchmark_suite(Path(benchmark_path))
                         suite.min_accuracy = min_accuracy
-                        result = run_benchmark_suite(client, source_config.space_id, suite, verbose=True)
+                        result = run_benchmark_suite(
+                            client, source_config.space_id, suite, verbose=True
+                        )
 
                         if result.accuracy < min_accuracy:
                             if force:
-                                console.print("[yellow]Warning:[/yellow] Benchmark failed but --force specified")
+                                console.print(
+                                    "[yellow]Warning:[/yellow] Benchmark failed but --force specified"
+                                )
                             else:
                                 console.print("[red]✗ Benchmark failed - blocking promotion[/red]")
                                 sys.exit(1)
@@ -453,7 +480,9 @@ def promote(
         if env_config.table_mappings and definition.data_sources:
             for table in definition.data_sources.tables:
                 if table.identifier in env_config.table_mappings:
-                    console.print(f"  Remapping table: {table.identifier} → {env_config.table_mappings[table.identifier]}")
+                    console.print(
+                        f"  Remapping table: {table.identifier} → {env_config.table_mappings[table.identifier]}"
+                    )
                     table.identifier = env_config.table_mappings[table.identifier]
 
         # Push to target environment
@@ -513,7 +542,9 @@ def delete(space_id: str, yes: bool, host: str | None, token: str | None):
             space = client.get_space(space_id, include_serialized=False)
 
             if not yes:
-                console.print(f"[yellow]Warning:[/yellow] This will delete space '{space.title}' ({space_id})")
+                console.print(
+                    f"[yellow]Warning:[/yellow] This will delete space '{space.title}' ({space_id})"
+                )
                 if not click.confirm("Are you sure?"):
                     console.print("Cancelled")
                     return
@@ -528,4 +559,3 @@ def delete(space_id: str, yes: bool, host: str | None, token: str | None):
 
 if __name__ == "__main__":
     main()
-

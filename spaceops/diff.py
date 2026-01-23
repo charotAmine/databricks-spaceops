@@ -17,6 +17,7 @@ from rich.text import Text
 
 class ChangeType(Enum):
     """Type of change detected in a diff."""
+
     ADDED = "added"
     REMOVED = "removed"
     MODIFIED = "modified"
@@ -198,7 +199,9 @@ def format_diff_for_display(
         console.print("[green]✓ No changes detected[/green]")
         return console.export_text()
 
-    console.print(Panel(f"[bold]Changes Summary:[/bold] {diff_result.summary}", title="Diff Report"))
+    console.print(
+        Panel(f"[bold]Changes Summary:[/bold] {diff_result.summary}", title="Diff Report")
+    )
 
     # Tables section
     if diff_result.tables_added or diff_result.tables_removed or diff_result.tables_modified:
@@ -254,11 +257,13 @@ def print_diff(
         return
 
     console.print()
-    console.print(Panel(
-        Text(diff_result.summary, style="bold"),
-        title="[bold blue]Space Changes Detected[/bold blue]",
-        border_style="blue",
-    ))
+    console.print(
+        Panel(
+            Text(diff_result.summary, style="bold"),
+            title="[bold blue]Space Changes Detected[/bold blue]",
+            border_style="blue",
+        )
+    )
 
     # Tables section
     if diff_result.tables_added or diff_result.tables_removed or diff_result.tables_modified:
@@ -289,7 +294,9 @@ def print_diff(
 
     if config_changes:
         console.print()
-        config_table = Table(title="⚙️  Configuration Changes", show_header=True, header_style="bold cyan")
+        config_table = Table(
+            title="⚙️  Configuration Changes", show_header=True, header_style="bold cyan"
+        )
         config_table.add_column("Section")
         config_table.add_column("Description")
 
@@ -299,4 +306,3 @@ def print_diff(
         console.print(config_table)
 
     console.print()
-

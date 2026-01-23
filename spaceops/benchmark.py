@@ -43,7 +43,7 @@ def extract_tables_from_sql(sql: str) -> list[str]:
         List of table identifiers found in the query.
     """
     # Match patterns like: FROM catalog.schema.table, JOIN catalog.schema.table
-    pattern = r'(?:FROM|JOIN)\s+([a-zA-Z_][a-zA-Z0-9_]*(?:\.[a-zA-Z_][a-zA-Z0-9_]*){0,2})'
+    pattern = r"(?:FROM|JOIN)\s+([a-zA-Z_][a-zA-Z0-9_]*(?:\.[a-zA-Z_][a-zA-Z0-9_]*){0,2})"
     matches = re.findall(pattern, sql, re.IGNORECASE)
     return [m.lower() for m in matches]
 
@@ -58,7 +58,7 @@ def extract_columns_from_sql(sql: str) -> list[str]:
         List of column names found in the query.
     """
     # Simplified extraction - get columns from SELECT clause
-    select_match = re.search(r'SELECT\s+(.*?)\s+FROM', sql, re.IGNORECASE | re.DOTALL)
+    select_match = re.search(r"SELECT\s+(.*?)\s+FROM", sql, re.IGNORECASE | re.DOTALL)
     if not select_match:
         return []
 
@@ -66,23 +66,23 @@ def extract_columns_from_sql(sql: str) -> list[str]:
 
     # Handle aliases and functions
     columns = []
-    for part in select_clause.split(','):
+    for part in select_clause.split(","):
         part = part.strip()
         # Skip *
-        if part == '*':
+        if part == "*":
             continue
         # Handle aliases: column AS alias -> take column
-        if ' AS ' in part.upper():
+        if " AS " in part.upper():
             part = part.split()[0]
         # Handle table.column -> take column
-        if '.' in part:
-            part = part.split('.')[-1]
+        if "." in part:
+            part = part.split(".")[-1]
         # Handle functions: SUM(column) -> take column
-        func_match = re.search(r'\w+\(([^)]+)\)', part)
+        func_match = re.search(r"\w+\(([^)]+)\)", part)
         if func_match:
             part = func_match.group(1).strip()
-            if '.' in part:
-                part = part.split('.')[-1]
+            if "." in part:
+                part = part.split(".")[-1]
 
         if part and part.isidentifier():
             columns.append(part.lower())
@@ -148,7 +148,7 @@ def evaluate_benchmark_query(
                 question=query.question,
                 passed=False,
                 error="No SQL generated or timeout",
-                details={"response": msg if 'msg' in dir() else None},
+                details={"response": msg if "msg" in dir() else None},
             )
 
         details["generated_sql"] = sql
@@ -240,12 +240,14 @@ def run_benchmark_suite(
     results: list[BenchmarkResult] = []
 
     if verbose:
-        console.print(Panel(
-            f"[bold]Running benchmark suite:[/bold] {suite.name}\n"
-            f"[dim]{suite.description or 'No description'}[/dim]\n"
-            f"Queries: {len(suite.queries)} | Min accuracy: {suite.min_accuracy:.0%}",
-            title="🧪 Benchmark",
-        ))
+        console.print(
+            Panel(
+                f"[bold]Running benchmark suite:[/bold] {suite.name}\n"
+                f"[dim]{suite.description or 'No description'}[/dim]\n"
+                f"Queries: {len(suite.queries)} | Min accuracy: {suite.min_accuracy:.0%}",
+                title="🧪 Benchmark",
+            )
+        )
 
     with Progress(
         SpinnerColumn(),
@@ -296,14 +298,16 @@ def print_benchmark_results(
     status_icon = "✓" if result.accuracy >= min_accuracy else "✗"
 
     console.print()
-    console.print(Panel(
-        f"[bold]Accuracy:[/bold] [{status_color}]{result.accuracy:.1%}[/{status_color}] "
-        f"(threshold: {min_accuracy:.0%})\n"
-        f"[green]Passed:[/green] {result.passed} | [red]Failed:[/red] {result.failed} | "
-        f"Total: {result.total}",
-        title=f"[{status_color}]{status_icon} Benchmark Results: {result.suite_name}[/{status_color}]",
-        border_style=status_color,
-    ))
+    console.print(
+        Panel(
+            f"[bold]Accuracy:[/bold] [{status_color}]{result.accuracy:.1%}[/{status_color}] "
+            f"(threshold: {min_accuracy:.0%})\n"
+            f"[green]Passed:[/green] {result.passed} | [red]Failed:[/red] {result.failed} | "
+            f"Total: {result.total}",
+            title=f"[{status_color}]{status_icon} Benchmark Results: {result.suite_name}[/{status_color}]",
+            border_style=status_color,
+        )
+    )
 
     # Detailed results table
     if result.failed > 0:
@@ -348,6 +352,7 @@ def generate_benchmark_report(
     """
     if output_format == "json":
         import json
+
         return json.dumps(
             [r.model_dump() for r in results],
             indent=2,
@@ -369,24 +374,26 @@ def generate_benchmark_report(
         status = "✅ PASS" if r.accuracy >= 0.8 else "❌ FAIL"
         if r.accuracy < 0.8:
             all_passed = False
-        lines.append(
-            f"| {r.suite_name} | {r.passed} | {r.failed} | {r.accuracy:.1%} | {status} |"
-        )
+        lines.append(f"| {r.suite_name} | {r.passed} | {r.failed} | {r.accuracy:.1%} | {status} |")
 
-    lines.extend([
-        "",
-        f"## Overall Status: {'✅ All benchmarks passed' if all_passed else '❌ Some benchmarks failed'}",
-        "",
-    ])
+    lines.extend(
+        [
+            "",
+            f"## Overall Status: {'✅ All benchmarks passed' if all_passed else '❌ Some benchmarks failed'}",
+            "",
+        ]
+    )
 
     # Detailed failures
     for r in results:
         failed = [q for q in r.results if not q.passed]
         if failed:
-            lines.extend([
-                f"### Failed Queries in {r.suite_name}",
-                "",
-            ])
+            lines.extend(
+                [
+                    f"### Failed Queries in {r.suite_name}",
+                    "",
+                ]
+            )
             for f in failed:
                 lines.append(f"- **{f.question}**")
                 if f.error:
@@ -397,4 +404,3 @@ def generate_benchmark_report(
             lines.append("")
 
     return "\n".join(lines)
-

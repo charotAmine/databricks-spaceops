@@ -10,6 +10,7 @@ from pydantic import BaseModel, Field
 # COLUMN & TABLE CONFIGS
 # =============================================================================
 
+
 class ColumnConfig(BaseModel):
     """Configuration for a table column."""
 
@@ -44,20 +45,24 @@ class DataSources(BaseModel):
 # INSTRUCTIONS (API FORMAT)
 # =============================================================================
 
+
 class TextInstruction(BaseModel):
     """A text instruction for Genie."""
+
     id: str | None = None
     content: list[str]  # API expects array of strings
 
 
 class TableReference(BaseModel):
     """Reference to a table in a join."""
+
     identifier: str
     alias: str | None = None
 
 
 class JoinSpec(BaseModel):
     """Join specification between two tables."""
+
     id: str | None = None
     left: TableReference
     right: TableReference
@@ -67,6 +72,7 @@ class JoinSpec(BaseModel):
 
 class ExampleQuestionSQL(BaseModel):
     """Example question with SQL answer."""
+
     id: str | None = None
     question: list[str]  # Question as array of strings
     sql: list[str]  # SQL as array of strings (line by line)
@@ -74,6 +80,7 @@ class ExampleQuestionSQL(BaseModel):
 
 class SQLFilter(BaseModel):
     """SQL filter snippet."""
+
     id: str | None = None
     sql: list[str]
     display_name: str
@@ -81,6 +88,7 @@ class SQLFilter(BaseModel):
 
 class SQLExpression(BaseModel):
     """SQL expression snippet."""
+
     id: str | None = None
     sql: list[str]
     display_name: str
@@ -90,6 +98,7 @@ class SQLExpression(BaseModel):
 
 class SQLMeasure(BaseModel):
     """SQL measure snippet."""
+
     id: str | None = None
     sql: list[str]
     display_name: str
@@ -97,6 +106,7 @@ class SQLMeasure(BaseModel):
 
 class SQLSnippets(BaseModel):
     """Collection of SQL snippets."""
+
     filters: list[SQLFilter] | None = None
     expressions: list[SQLExpression] | None = None
     measures: list[SQLMeasure] | None = None
@@ -104,6 +114,7 @@ class SQLSnippets(BaseModel):
 
 class Instructions(BaseModel):
     """All instructions for the Genie space (API format)."""
+
     text_instructions: list[TextInstruction] | None = None
     example_question_sqls: list[ExampleQuestionSQL] | None = None
     join_specs: list[JoinSpec] | None = None
@@ -113,6 +124,7 @@ class Instructions(BaseModel):
 # =============================================================================
 # SERIALIZED SPACE (API FORMAT)
 # =============================================================================
+
 
 class SerializedSpace(BaseModel):
     """The serialized space configuration (API format)."""
@@ -128,14 +140,17 @@ class SerializedSpace(BaseModel):
 # USER-FRIENDLY SPACE DEFINITION
 # =============================================================================
 
+
 class SimpleInstruction(BaseModel):
     """User-friendly instruction format."""
+
     content: str
     category: str | None = None
 
 
 class SimpleJoin(BaseModel):
     """User-friendly join format."""
+
     left_table: str
     left_alias: str | None = None
     right_table: str
@@ -147,6 +162,7 @@ class SimpleJoin(BaseModel):
 
 class SimpleExample(BaseModel):
     """User-friendly example query format."""
+
     question: str
     sql: str
     description: str | None = None
@@ -154,12 +170,14 @@ class SimpleExample(BaseModel):
 
 class SimpleFilter(BaseModel):
     """User-friendly filter snippet."""
+
     name: str
     sql: str
 
 
 class SimpleExpression(BaseModel):
     """User-friendly expression snippet."""
+
     name: str
     sql: str
     description: str | None = None
@@ -168,6 +186,7 @@ class SimpleExpression(BaseModel):
 
 class SimpleMeasure(BaseModel):
     """User-friendly measure snippet."""
+
     name: str
     sql: str
 
@@ -181,10 +200,14 @@ class SpaceDefinition(BaseModel):
 
     title: str
     description: str | None = None
-    warehouse_id: str | None = Field(None, description="Warehouse ID (can be overridden per environment)")
+    warehouse_id: str | None = Field(
+        None, description="Warehouse ID (can be overridden per environment)"
+    )
 
     # Schema version
-    version: int | str | None = Field(None, description="Schema version (int) or user-defined version (string)")
+    version: int | str | None = Field(
+        None, description="Schema version (int) or user-defined version (string)"
+    )
 
     # Data sources
     data_sources: DataSources = Field(default_factory=DataSources)
@@ -231,12 +254,12 @@ class SpaceDefinition(BaseModel):
                             )
                             for col in table.column_configs
                         ],
-                        key=lambda c: c.column_name
+                        key=lambda c: c.column_name,
                     ),
                 )
                 for table in self.data_sources.tables
             ],
-            key=lambda t: t.identifier
+            key=lambda t: t.identifier,
         )
         sorted_data_sources = DataSources(tables=sorted_tables)
 
@@ -246,10 +269,7 @@ class SpaceDefinition(BaseModel):
         # Convert text instructions - API only supports ONE item with multiple content lines
         if self.instructions:
             api_instructions.text_instructions = [
-                TextInstruction(
-                    id=gen_id(),
-                    content=[inst.content for inst in self.instructions]
-                )
+                TextInstruction(id=gen_id(), content=[inst.content for inst in self.instructions])
             ]
 
         # Convert example queries
@@ -258,7 +278,7 @@ class SpaceDefinition(BaseModel):
                 ExampleQuestionSQL(
                     id=gen_id(),
                     question=[ex.question],
-                    sql=ex.sql.strip().split('\n')  # Split SQL into lines
+                    sql=ex.sql.strip().split("\n"),  # Split SQL into lines
                 )
                 for ex in self.example_queries
             ]
@@ -270,17 +290,14 @@ class SpaceDefinition(BaseModel):
                     id=gen_id(),
                     left=TableReference(
                         identifier=join.left_table,
-                        alias=join.left_alias or join.left_table.split('.')[-1]
+                        alias=join.left_alias or join.left_table.split(".")[-1],
                     ),
                     right=TableReference(
                         identifier=join.right_table,
-                        alias=join.right_alias or join.right_table.split('.')[-1]
+                        alias=join.right_alias or join.right_table.split(".")[-1],
                     ),
-                    sql=[
-                        join.condition,
-                        f"--rt=FROM_RELATIONSHIP_TYPE_{join.relationship_type}--"
-                    ],
-                    instruction=[join.description] if join.description else None
+                    sql=[join.condition, f"--rt=FROM_RELATIONSHIP_TYPE_{join.relationship_type}--"],
+                    instruction=[join.description] if join.description else None,
                 )
                 for join in self.joins
             ]
@@ -289,31 +306,35 @@ class SpaceDefinition(BaseModel):
         if self.filters or self.expressions or self.measures:
             api_instructions.sql_snippets = SQLSnippets(
                 filters=[
-                    SQLFilter(id=gen_id(), sql=[f.sql], display_name=f.name)
-                    for f in self.filters
-                ] if self.filters else None,
+                    SQLFilter(id=gen_id(), sql=[f.sql], display_name=f.name) for f in self.filters
+                ]
+                if self.filters
+                else None,
                 expressions=[
                     SQLExpression(
                         id=gen_id(),
                         sql=[e.sql],
                         display_name=e.name,
                         instruction=[e.description] if e.description else None,
-                        synonyms=e.synonyms
+                        synonyms=e.synonyms,
                     )
                     for e in self.expressions
-                ] if self.expressions else None,
+                ]
+                if self.expressions
+                else None,
                 measures=[
-                    SQLMeasure(id=gen_id(), sql=[m.sql], display_name=m.name)
-                    for m in self.measures
-                ] if self.measures else None,
+                    SQLMeasure(id=gen_id(), sql=[m.sql], display_name=m.name) for m in self.measures
+                ]
+                if self.measures
+                else None,
             )
 
         # Only include instructions if there's content
         has_instructions = (
-            api_instructions.text_instructions or
-            api_instructions.example_question_sqls or
-            api_instructions.join_specs or
-            api_instructions.sql_snippets
+            api_instructions.text_instructions
+            or api_instructions.example_question_sqls
+            or api_instructions.join_specs
+            or api_instructions.sql_snippets
         )
 
         return SerializedSpace(
@@ -326,6 +347,7 @@ class SpaceDefinition(BaseModel):
 # =============================================================================
 # API RESPONSE MODELS
 # =============================================================================
+
 
 class GenieSpace(BaseModel):
     """Response model from Genie API."""
@@ -340,6 +362,7 @@ class GenieSpace(BaseModel):
 # =============================================================================
 # BENCHMARK MODELS
 # =============================================================================
+
 
 class BenchmarkQuery(BaseModel):
     """A benchmark query for testing accuracy."""
@@ -391,17 +414,19 @@ class BenchmarkSuiteResult(BaseModel):
 # ENVIRONMENT CONFIG MODELS
 # =============================================================================
 
+
 class EnvironmentConfig(BaseModel):
     """Configuration for a specific environment."""
 
     name: str
     host: str = Field(..., description="Databricks workspace host URL")
     warehouse_id: str
-    space_id: str | None = Field(None, description="Existing space ID to update, or None to create new")
+    space_id: str | None = Field(
+        None, description="Existing space ID to update, or None to create new"
+    )
 
     table_mappings: dict[str, str] = Field(
-        default_factory=dict,
-        description="Map source table names to environment-specific tables"
+        default_factory=dict, description="Map source table names to environment-specific tables"
     )
 
 
@@ -411,5 +436,5 @@ class PromotionConfig(BaseModel):
     environments: dict[str, EnvironmentConfig]
     promotion_order: list[str] = Field(
         default_factory=lambda: ["dev", "stage", "prod"],
-        description="Order of environments for promotion"
+        description="Order of environments for promotion",
     )
