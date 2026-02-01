@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 # =============================================================================
 # COLUMN & TABLE CONFIGS
@@ -196,6 +196,7 @@ class SpaceDefinition(BaseModel):
 
     This is the user-friendly format stored in YAML files.
     It gets converted to the API format when pushing to Databricks.
+    Accepts both simple format and API snapshot format.
     """
 
     title: str
@@ -212,10 +213,52 @@ class SpaceDefinition(BaseModel):
     # Data sources
     data_sources: DataSources = Field(default_factory=DataSources)
 
-    # Instructions (user-friendly format)
-    instructions: list[SimpleInstruction] = Field(default_factory=list)
+    # Instructions (user-friendly format or API format)
+    instructions: list[SimpleInstruction] | dict = Field(default_factory=list)
     joins: list[SimpleJoin] = Field(default_factory=list)
     example_queries: list[SimpleExample] = Field(default_factory=list)
+
+    # Config section from API snapshots
+    config: dict | None = None
+
+    @model_validator(mode="before")
+    @classmethod
+    def normalize_instructions(cls, data: dict) -> dict:
+        """Convert API format instructions to simple format if needed."""
+        if not isinstance(data, dict):
+            return data
+
+        instructions = data.get("instructions")
+
+        # If instructions is a dict (API format), convert to simple list
+        if isinstance(instructions, dict):
+            simple_instructions = []
+
+            # Extract text_instructions
+            text_instructions = instructions.get("text_instructions", [])
+            for ti in text_instructions:
+                content = ti.get("content", "")
+                if isinstance(content, list):
+                    content = "".join(content).strip()
+                simple_instructions.append({"content": content})
+
+            # Extract example_question_sqls as example_queries
+            example_sqls = instructions.get("example_question_sqls", [])
+            example_queries = data.get("example_queries", [])
+            for eq in example_sqls:
+                question = eq.get("question", "")
+                sql = eq.get("sql", "")
+                if isinstance(question, list):
+                    question = "".join(question).strip()
+                if isinstance(sql, list):
+                    sql = "".join(sql).strip()
+                example_queries.append({"question": question, "sql": sql})
+
+            data["instructions"] = simple_instructions
+            if example_queries:
+                data["example_queries"] = example_queries
+
+        return data
 
     # SQL Snippets
     filters: list[SimpleFilter] = Field(default_factory=list)
@@ -267,9 +310,14 @@ class SpaceDefinition(BaseModel):
         api_instructions = Instructions()
 
         # Convert text instructions - API only supports ONE item with multiple content lines
+        # Add newline to preserve formatting
         if self.instructions:
+            all_content = "\n\n".join(inst.content for inst in self.instructions)
             api_instructions.text_instructions = [
-                TextInstruction(id=gen_id(), content=[inst.content for inst in self.instructions])
+                TextInstruction(
+                    id=gen_id(),
+                    content=[line + "\n" for line in all_content.split("\n")],
+                )
             ]
 
         # Convert example queries
@@ -278,7 +326,8 @@ class SpaceDefinition(BaseModel):
                 ExampleQuestionSQL(
                     id=gen_id(),
                     question=[ex.question],
-                    sql=ex.sql.strip().split("\n"),  # Split SQL into lines
+                    # Add newline to each line so API preserves formatting
+                    sql=[line + "\n" for line in ex.sql.strip().split("\n")],
                 )
                 for ex in self.example_queries
             ]
@@ -296,26 +345,27 @@ class SpaceDefinition(BaseModel):
                         identifier=join.right_table,
                         alias=join.right_alias or join.right_table.split(".")[-1],
                     ),
-                    sql=[join.condition, f"--rt=FROM_RELATIONSHIP_TYPE_{join.relationship_type}--"],
-                    instruction=[join.description] if join.description else None,
+                    sql=[join.condition + "\n", f"--rt=FROM_RELATIONSHIP_TYPE_{join.relationship_type}--\n"],
+                    instruction=[join.description + "\n"] if join.description else None,
                 )
                 for join in self.joins
             ]
 
-        # Convert SQL snippets
+        # Convert SQL snippets (add newlines to preserve formatting)
         if self.filters or self.expressions or self.measures:
             api_instructions.sql_snippets = SQLSnippets(
                 filters=[
-                    SQLFilter(id=gen_id(), sql=[f.sql], display_name=f.name) for f in self.filters
+                    SQLFilter(id=gen_id(), sql=[f.sql + "\n"], display_name=f.name)
+                    for f in self.filters
                 ]
                 if self.filters
                 else None,
                 expressions=[
                     SQLExpression(
                         id=gen_id(),
-                        sql=[e.sql],
+                        sql=[e.sql + "\n"],
                         display_name=e.name,
-                        instruction=[e.description] if e.description else None,
+                        instruction=[e.description + "\n"] if e.description else None,
                         synonyms=e.synonyms,
                     )
                     for e in self.expressions
@@ -323,7 +373,8 @@ class SpaceDefinition(BaseModel):
                 if self.expressions
                 else None,
                 measures=[
-                    SQLMeasure(id=gen_id(), sql=[m.sql], display_name=m.name) for m in self.measures
+                    SQLMeasure(id=gen_id(), sql=[m.sql + "\n"], display_name=m.name)
+                    for m in self.measures
                 ]
                 if self.measures
                 else None,

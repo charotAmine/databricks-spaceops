@@ -60,9 +60,10 @@ def _clean_snapshot_output(data: dict) -> dict:
     """
 
     def join_string_list(items):
-        """Join a list of strings into a single string."""
+        """Join a list of strings into a single multi-line string."""
         if isinstance(items, list) and all(isinstance(i, str) for i in items):
-            return "".join(items).strip()
+            # Each item is a line - join with newlines
+            return "\n".join(line.rstrip() for line in items).strip()
         return items
 
     def process_dict(d):
