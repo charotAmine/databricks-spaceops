@@ -52,6 +52,42 @@ def load_promotion_config(path: Path) -> PromotionConfig:
     return PromotionConfig(**data)
 
 
+def _clean_snapshot_output(data: dict) -> dict:
+    """Clean up snapshot output for better readability.
+
+    The API returns content and sql as lists of strings (one per line).
+    This function joins them into single readable strings.
+    """
+
+    def join_string_list(items):
+        """Join a list of strings into a single string."""
+        if isinstance(items, list) and all(isinstance(i, str) for i in items):
+            return "".join(items).strip()
+        return items
+
+    def process_dict(d):
+        """Recursively process dictionary to clean up string lists."""
+        if not isinstance(d, dict):
+            return d
+
+        result = {}
+        for key, value in d.items():
+            if key in ("content", "sql", "question") and isinstance(value, list):
+                # Join string lists into single strings
+                result[key] = join_string_list(value)
+            elif isinstance(value, dict):
+                result[key] = process_dict(value)
+            elif isinstance(value, list):
+                result[key] = [
+                    process_dict(item) if isinstance(item, dict) else item for item in value
+                ]
+            else:
+                result[key] = value
+        return result
+
+    return process_dict(data)
+
+
 def get_client(host: str | None = None, token: str | None = None) -> GenieClient:
     """Create a Genie API client."""
     return GenieClient(host=host, token=token)
@@ -105,7 +141,17 @@ def snapshot(space_id: str, output: str | None, fmt: str, host: str | None, toke
             # Clean up None values
             definition = {k: v for k, v in definition.items() if v is not None}
 
+            # Post-process to make YAML more readable
+            definition = _clean_snapshot_output(definition)
+
             if fmt == "yaml":
+                # Use literal block style for multi-line strings
+                def str_representer(dumper, data):
+                    if "\n" in data:
+                        return dumper.represent_scalar("tag:yaml.org,2002:str", data, style="|")
+                    return dumper.represent_scalar("tag:yaml.org,2002:str", data)
+
+                yaml.add_representer(str, str_representer)
                 content = yaml.dump(
                     definition, default_flow_style=False, sort_keys=False, allow_unicode=True
                 )

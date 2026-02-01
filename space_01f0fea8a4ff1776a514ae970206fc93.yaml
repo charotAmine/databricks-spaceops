@@ -1,0 +1,381 @@
+title: arrow_ops_genie
+warehouse_id: 862f1d757f0424f7
+description: Genie space for qld_arrow demo with curated questions and SQL instructions
+version: 2
+config:
+  sample_questions:
+  - id: 01f0fea8a5741236b96936b69b631fb7
+    question:
+    - What operational change or rollback events align with the anomaly spike (2026-01-17
+      change, 2026-01-23 remediation), and what basin/asset scope did they affect?
+  - id: 01f0fea8a57318479f091dcc60e4ad3e
+    question:
+    - How much delivered volume shortfall accumulated during 2026-01-18 to 2026-01-22,
+      and what is the estimated contractual exposure?
+  - id: 01f0fea8a5721ff68cb2f736fa1ea03a
+    question:
+    - Compare delivered vs nominated TJ/day for Surat vs Bowen since 2026-01-01 and
+      highlight days with shortfall >10 TJ.
+  - id: 01f0fea8a5721851acda5026ab30fcb5
+    question:
+    - Which pipeline segments have recurring pressure oscillations and are currently
+      flagged high severity (last 7 days)?
+  - id: 01f0fea8a57210d2b0b1a4caf3c6ad13
+    question:
+    - Which assets have the lowest health scores today, and how many high-severity
+      anomalies did they have in the last 7 days?
+  - id: 01f0fea8a571194c9cabdd1e0146b7df
+    question:
+    - List compressor stations in the Dalby corridor with high_vibration events in
+      the last 48 hours (include max model_score and max vibration value).
+  - id: 01f0fea8a571114ead73c9faa3887260
+    question:
+    - Show me all high-severity pressure_oscillation anomalies in the Surat basin
+      this week, by locality and asset.
+  - id: 01f0fea8a570191cbd75bfad98946e55
+    question:
+    - Which anomaly types dominated during the spike window compared with the prior
+      week (pressure oscillation vs vibration vs others)?
+  - id: 01f0fea8a570113894448cd9e567cb35
+    question:
+    - Which basin and localities contributed most to the high-severity anomaly spike
+      during 2026-01-18 to 2026-01-22?
+  - id: 01f0fea8a56e1fd1921fd6f3b666225d
+    question:
+    - When did high-severity telemetry anomalies deviate from the baseline, and what
+      was the peak between 2026-01-18 and 2026-01-22?
+data_sources:
+  tables:
+  - identifier: demo_generator.rakesh_cherukuri_qld_arrow.gold_anomaly_events
+  - identifier: demo_generator.rakesh_cherukuri_qld_arrow.gold_anomaly_timeseries_daily
+  - identifier: demo_generator.rakesh_cherukuri_qld_arrow.gold_anomaly_type_comparison
+  - identifier: demo_generator.rakesh_cherukuri_qld_arrow.gold_asset_health_daily
+  - identifier: demo_generator.rakesh_cherukuri_qld_arrow.gold_maintenance_backlog
+  - identifier: demo_generator.rakesh_cherukuri_qld_arrow.gold_operational_events
+  - identifier: demo_generator.rakesh_cherukuri_qld_arrow.gold_safety_compliance_weekly
+  - identifier: demo_generator.rakesh_cherukuri_qld_arrow.gold_supply_impact_daily
+  - identifier: demo_generator.rakesh_cherukuri_qld_arrow.gold_supply_kpis_daily
+  - identifier: demo_generator.rakesh_cherukuri_qld_arrow.silver_assets
+  - identifier: demo_generator.rakesh_cherukuri_qld_arrow.silver_inspections
+  - identifier: demo_generator.rakesh_cherukuri_qld_arrow.silver_safety_incidents
+  - identifier: demo_generator.rakesh_cherukuri_qld_arrow.silver_telemetry
+  - identifier: demo_generator.rakesh_cherukuri_qld_arrow.silver_work_orders
+instructions:
+  text_instructions:
+  - id: 01f0fea8a58719f5b50d2180b4179e31
+    content:
+    - 'This Genie space supports self-serve analysis for Arrow Energy operations reliability
+      and safety across Surat and Bowen basins (QLD). Use gold tables for executive-ready
+      KPIs and drilldowns.
+
+      '
+    - '
+
+      '
+    - 'Data model (gold-first):
+
+      '
+    - '- Anomalies (atomic): gold_anomaly_events (one row per anomaly reading; filter
+      by severity/anomaly_type/basin/locality/asset_class).
+
+      '
+    - '- Anomaly KPIs: gold_anomaly_timeseries_daily (daily counts by basin).
+
+      '
+    - '- Anomaly composition: gold_anomaly_type_comparison (pre_event vs spike comparison
+      by anomaly_type).
+
+      '
+    - '- Supply reliability: gold_supply_kpis_daily (delivered vs nominated and shortfall
+      by basin/offtake/day).
+
+      '
+    - '- Business exposure: gold_supply_impact_daily (shortfall_tj * constant price_per_tj;
+      includes cumulative_exposure_usd).
+
+      '
+    - '- Asset risk ranking: gold_asset_health_daily (health_score 0–100; lower is
+      worse; includes high_anomaly_count_7d and open_work_orders).
+
+      '
+    - '- Root-cause narrative: gold_operational_events (includes the key 2026-01-17
+      control_change and 2026-01-23 rollback).
+
+      '
+    - '- Latest state for map-style questions: gold_latest_asset_state (latest reading
+      per asset x sensor_type).
+
+      '
+    - '
+
+      '
+    - 'Business logic notes:
+
+      '
+    - '- High-severity anomalies: severity = ''high''.
+
+      '
+    - '- Spike window: 2026-01-18 to 2026-01-22; pre-event reference week: 2026-01-10
+      to 2026-01-17.
+
+      '
+    - '- Exposure uses price_per_tj=20000.0 (synthetic constant).
+
+      '
+    - '
+
+      '
+    - 'Querying guidance:
+
+      '
+    - '- Prefer gold_anomaly_timeseries_daily for time series; use gold_anomaly_events
+      for locality/asset drilldowns.
+
+      '
+    - '- For "last 48 hours" questions, anchor the window to MAX(event_ts) from the
+      relevant table (data is historical).
+
+      '
+    - '
+
+      '
+    - 'Data quality considerations:
+
+      '
+    - '- silver_telemetry_quarantine holds non-good telemetry; gold tables are built
+      from validated ''good'' telemetry only.
+
+      '
+    - '- Some metrics in asset health and compliance may reflect synthetic/demo artifacts;
+      treat as directional for demo storytelling.'
+  example_question_sqls:
+  - id: 01f0fea8a59a1593a4dd57e5e81f505c
+    question:
+    - Daily high-severity anomaly trend (by basin)
+    sql:
+    - '-- High-severity anomalies per day by basin (drives the main spike view)
+
+      '
+    - 'SELECT
+
+      '
+    - '  event_date,
+
+      '
+    - '  basin,
+
+      '
+    - '  high_anomaly_count,
+
+      '
+    - '  total_anomaly_count,
+
+      '
+    - '  distinct_assets_affected
+
+      '
+    - 'FROM demo_generator.rakesh_cherukuri_qld_arrow.gold_anomaly_timeseries_daily
+
+      '
+    - 'WHERE event_date BETWEEN DATE(''2026-01-01'') AND DATE(''2026-01-31'')
+
+      '
+    - ORDER BY event_date, basin;
+  - id: 01f0fea8a5ac13758580dceedef156b5
+    question:
+    - High-severity anomalies by locality and anomaly type (spike window)
+    sql:
+    - '-- Break down the spike window to find where/what is driving high severity
+
+      '
+    - 'SELECT
+
+      '
+    - '  basin,
+
+      '
+    - '  locality,
+
+      '
+    - '  anomaly_type,
+
+      '
+    - '  COUNT(*) AS high_events
+
+      '
+    - 'FROM demo_generator.rakesh_cherukuri_qld_arrow.gold_anomaly_events
+
+      '
+    - 'WHERE severity = ''high''
+
+      '
+    - '  AND event_date BETWEEN DATE(''2026-01-18'') AND DATE(''2026-01-22'')
+
+      '
+    - 'GROUP BY basin, locality, anomaly_type
+
+      '
+    - ORDER BY high_events DESC;
+  - id: 01f0fea8a5be11609cef7f6bfde6852c
+    question:
+    - Dalby compressor stations with recent high vibration
+    sql:
+    - '-- Compressor stations in Dalby with high_vibration in last 48 hours of available
+      data
+
+      '
+    - '-- (Uses max event_ts in the table as the reference ''now'')
+
+      '
+    - 'WITH max_ts AS (
+
+      '
+    - '  SELECT MAX(event_ts) AS max_event_ts
+
+      '
+    - '  FROM demo_generator.rakesh_cherukuri_qld_arrow.gold_anomaly_events
+
+      '
+    - '), windowed AS (
+
+      '
+    - '  SELECT a.*
+
+      '
+    - '  FROM demo_generator.rakesh_cherukuri_qld_arrow.gold_anomaly_events a
+
+      '
+    - '  CROSS JOIN max_ts
+
+      '
+    - '  WHERE a.event_ts >= max_ts.max_event_ts - INTERVAL 48 HOURS
+
+      '
+    - '    AND a.locality = ''Dalby''
+
+      '
+    - '    AND a.asset_class = ''compressor_station''
+
+      '
+    - '    AND a.anomaly_type = ''high_vibration''
+
+      '
+    - '    AND a.severity IN (''high'',''medium'')
+
+      '
+    - ')
+
+      '
+    - 'SELECT
+
+      '
+    - '  asset_id,
+
+      '
+    - '  asset_name,
+
+      '
+    - '  COUNT(*) AS events,
+
+      '
+    - '  MAX(model_score) AS max_model_score,
+
+      '
+    - '  MAX(sensor_value) AS max_vibration_mm_s,
+
+      '
+    - '  MAX(event_ts) AS last_event_ts
+
+      '
+    - 'FROM windowed
+
+      '
+    - 'GROUP BY asset_id, asset_name
+
+      '
+    - ORDER BY max_model_score DESC, events DESC;
+  - id: 01f0fea8a5d017838c345d50af51a97b
+    question:
+    - Delivered vs nominated and shortfall (by basin)
+    sql:
+    - '-- Basin-level delivered vs nominated and shortfall
+
+      '
+    - 'SELECT
+
+      '
+    - '  schedule_date,
+
+      '
+    - '  basin,
+
+      '
+    - '  SUM(nominated_tj) AS nominated_tj,
+
+      '
+    - '  SUM(delivered_tj) AS delivered_tj,
+
+      '
+    - '  SUM(shortfall_tj) AS shortfall_tj
+
+      '
+    - 'FROM demo_generator.rakesh_cherukuri_qld_arrow.gold_supply_kpis_daily
+
+      '
+    - 'WHERE schedule_date >= DATE(''2026-01-01'')
+
+      '
+    - 'GROUP BY schedule_date, basin
+
+      '
+    - ORDER BY schedule_date, basin;
+  - id: 01f0fea8a5e31230a674cf398bbb4566
+    question:
+    - Spike-window cumulative shortfall and exposure (all basins)
+    sql:
+    - '-- Shortfall and exposure during the spike window
+
+      '
+    - 'SELECT
+
+      '
+    - '  schedule_date,
+
+      '
+    - '  SUM(shortfall_tj) AS shortfall_tj,
+
+      '
+    - '  SUM(exposure_usd) AS exposure_usd
+
+      '
+    - 'FROM demo_generator.rakesh_cherukuri_qld_arrow.gold_supply_impact_daily
+
+      '
+    - 'WHERE schedule_date BETWEEN DATE(''2026-01-18'') AND DATE(''2026-01-22'')
+
+      '
+    - 'GROUP BY schedule_date
+
+      '
+    - 'ORDER BY schedule_date;
+
+      '
+    - '
+
+      '
+    - '-- Total for the window
+
+      '
+    - 'SELECT
+
+      '
+    - '  SUM(shortfall_tj) AS total_shortfall_tj,
+
+      '
+    - '  SUM(exposure_usd) AS total_exposure_usd
+
+      '
+    - 'FROM demo_generator.rakesh_cherukuri_qld_arrow.gold_supply_impact_daily
+
+      '
+    - WHERE schedule_date BETWEEN DATE('2026-01-18') AND DATE('2026-01-22');
